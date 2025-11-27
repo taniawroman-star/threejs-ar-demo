@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Three.js AR Cube</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
+      #ar-button {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 16px 24px;
+        font-size: 18px;
+        border-radius: 10px;
+        background: #fff;
+        border: none;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js";
+      import { ARButton } from "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/webxr/ARButton.js";
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera();
+
+      const renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: true,
+      });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.xr.enabled = true;
+      document.body.appendChild(renderer.domElement);
+
+      const cubeGeo = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+      const cubeMat = new THREE.MeshStandardMaterial({ color: 0x00ff88 });
+      const cube = new THREE.Mesh(cubeGeo, cubeMat);
+      cube.position.set(0, 0, -0.5); // half meter in front of the user
+      scene.add(cube);
+
+      const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
+      scene.add(light);
+
+      document.body.appendChild(ARButton.createButton(renderer));
+
+      renderer.setAnimationLoop(() => {
+        cube.rotation.y += 0.01;
+        renderer.render(scene, camera);
+      });
+    </script>
+  </body>
+</html>
