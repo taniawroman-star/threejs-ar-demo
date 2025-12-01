@@ -4,7 +4,6 @@
     <title>three.js ar - cones (updated)</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <link type="text/css" rel="stylesheet" href="main.css">
 </head>
 <body>
 
@@ -31,35 +30,48 @@
 
         scene = new THREE.Scene();
 
-        camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
+        camera = new THREE.PerspectiveCamera(
+            70,
+            window.innerWidth / window.innerHeight,
+            0.01,
+            20
+        );
 
         const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
         light.position.set(0.5, 1, 0.25);
         scene.add(light);
 
-        // renderer
+        // Renderer
         renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.xr.enabled = true;
 
-        // NEW: Output color space
+        // NEW API
         renderer.outputColorSpace = THREE.SRGBColorSpace;
 
         container.appendChild(renderer.domElement);
 
         // AR Button
-        document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
+        document.body.appendChild(
+            ARButton.createButton(renderer)
+        );
 
-        // UPDATED: CylinderGeometry instead of CylinderBufferGeometry
+        // UPDATED geometry (CylinderBufferGeometry removed)
         const geometry = new THREE.CylinderGeometry(0, 0.05, 0.2, 32);
         geometry.rotateX(Math.PI / 2);
 
         function onSelect() {
-            const material = new THREE.MeshPhongMaterial({ color: Math.random() * 0xffffff });
+            const material = new THREE.MeshPhongMaterial({
+                color: Math.random() * 0xffffff
+            });
+
             const mesh = new THREE.Mesh(geometry, material);
 
-            mesh.position.set(0, 0, -0.3).applyMatrix4(controller.matrixWorld);
+            mesh.position
+                .set(0, 0, -0.3)
+                .applyMatrix4(controller.matrixWorld);
+
             mesh.quaternion.setFromRotationMatrix(controller.matrixWorld);
 
             scene.add(mesh);
