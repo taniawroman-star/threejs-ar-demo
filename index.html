@@ -4,13 +4,13 @@
 	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 	<title>Hello, world!</title>
 
-	<!-- Correct Three.js CDN (working) -->
+	<!-- Load THREE.js FIRST -->
 	<script src="https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.min.js"></script>
 </head>
 
-<body style='margin:0; overflow:hidden; font-family:Monospace;'>
+<body style="margin:0; overflow:hidden;">
 
-<!-- ---------------- Custom Shader Code ------------------------ -->
+<!-- Vertex Shader -->
 <script id="vertexShader" type="x-shader/x-vertex">
 uniform float time;
 varying vec2 textureUV;
@@ -20,6 +20,7 @@ void main() {
 }
 </script>
 
+<!-- Fragment Shader -->
 <script id="fragmentShader" type="x-shader/x-fragment">
 uniform float time;
 uniform sampler2D baseTexture;
@@ -28,18 +29,18 @@ void main() {
     gl_FragColor = texture2D(baseTexture, textureUV);
 }
 </script>
-<!-- ----------------------------------------------------------- -->
 
+<!-- Your JS must be AFTER THREE.js -->
 <script>
 
-let scene, camera, renderer, clock, deltaTime, totalTime;
-let mesh;
+let scene, camera, renderer, mesh, clock;
 
 init();
 animate();
 
 function init() {
 
+	// Three.js is loaded here because script order is correct
 	scene = new THREE.Scene();
 
 	camera = new THREE.PerspectiveCamera(
@@ -50,29 +51,24 @@ function init() {
 	);
 	camera.position.set(0, 2, 4);
 	camera.lookAt(scene.position);
+
 	scene.add(camera);
 
-	const ambientLight = new THREE.AmbientLight(0xcccccc, 1.0);
-	scene.add(ambientLight);
+	const light = new THREE.AmbientLight(0xffffff, 1);
+	scene.add(light);
 
-	renderer = new THREE.WebGLRenderer({
-		antialias: true
-	});
-	renderer.setClearColor(new THREE.Color('lightgrey'), 1);
+	renderer = new THREE.WebGLRenderer({ antialias: true });
 	renderer.setSize(window.innerWidth, window.innerHeight);
 	document.body.appendChild(renderer.domElement);
 
-	window.addEventListener('resize', onWindowResize, false);
+	window.addEventListener('resize', onWindowResize);
 
 	clock = new THREE.Clock();
-	deltaTime = 0;
-	totalTime = 0;
 
 	// Cube
 	const geometry = new THREE.BoxGeometry(1, 1, 1);
 
-	const loader = new THREE.TextureLoader();
-	const texture = loader.load('images/color-grid.png');
+	const texture = new THREE.TextureLoader().load("images/color-grid.png");
 
 	const material = new THREE.MeshLambertMaterial({ map: texture });
 
@@ -80,20 +76,10 @@ function init() {
 	scene.add(mesh);
 }
 
-function update() {
-	mesh.rotation.y += 0.01;
-}
-
-function render() {
-	renderer.render(scene, camera);
-}
-
 function animate() {
 	requestAnimationFrame(animate);
-	deltaTime = clock.getDelta();
-	totalTime += deltaTime;
-	update();
-	render();
+	mesh.rotation.y += 0.01;
+	renderer.render(scene, camera);
 }
 
 function onWindowResize() {
@@ -103,6 +89,5 @@ function onWindowResize() {
 }
 
 </script>
-
 </body>
 </html>
