@@ -1,66 +1,30 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="utf-8">
-  <title>AR Cube</title>
+  <title>AR.js Cube Example</title>
+  <script src="https://cdn.jsdelivr.net/npm/aframe@1.5.0/dist/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ar.js@3.4.5/aframe/build/aframe-ar-nft.js"></script>
   <style>
     body { margin: 0; overflow: hidden; }
   </style>
 </head>
 <body>
 
-<script type="module">
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js';
-import { ARButton } from 'https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/webxr/ARButton.js';
+<!-- AR.js Scene -->
+<a-scene
+  embedded
+  arjs="sourceType: webcam; debugUIEnabled: false;"
+>
+  
+  <!-- Hiro Marker -->
+  <a-marker preset="hiro">
+    <a-box position="0 0.5 0" material="color: #4CC3D9;"></a-box>
+  </a-marker>
 
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera();
+  <a-entity camera></a-entity>
 
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.xr.enabled = true;
-document.body.appendChild(renderer.domElement);
-
-document.body.appendChild(ARButton.createButton(renderer, {
-    requiredFeatures: ['hit-test'] // iPad needs this
-}));
-
-// Lighting
-scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1));
-
-// Cube
-const geometry = new THREE.BoxGeometry(0.15, 0.15, 0.15);
-const material = new THREE.MeshStandardMaterial({ color: 0x00ff88 });
-const cube = new THREE.Mesh(geometry, material);
-scene.add(cube);
-cube.visible = false;
-
-let hitTestSource = null;
-let localSpace = null;
-
-// Reference space for AR
-renderer.xr.addEventListener('sessionstart', async () => {
-    const session = renderer.xr.getSession();
-    const viewerSpace = await session.requestReferenceSpace('viewer');
-    hitTestSource = await session.requestHitTestSource({ space: viewerSpace });
-    localSpace = await session.requestReferenceSpace('local');
-});
-
-renderer.setAnimationLoop((timestamp, frame) => {
-    if (frame && hitTestSource) {
-        const hitTestResults = frame.getHitTestResults(hitTestSource);
-
-        if (hitTestResults.length > 0) {
-            const pose = hitTestResults[0].getPose(localSpace);
-            cube.position.set(pose.transform.position.x, pose.transform.position.y, pose.transform.position.z);
-            cube.visible = true;
-        }
-    }
-
-    cube.rotation.y += 0.01;
-    renderer.render(scene, camera);
-});
-</script>
+</a-scene>
 
 </body>
 </html>
