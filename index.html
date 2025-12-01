@@ -1,33 +1,18 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8">
-    <title>AR.js – iPad Stable Version</title>
-
-    <!-- A-Frame (stable on iPad) -->
-    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-
-    <!-- AR.js stable build -->
-    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.3.2/aframe/build/aframe-ar.js"></script>
-
-    <style>
-      body { margin: 0; overflow: hidden; font-family: sans-serif; }
-    </style>
-  </head>
-
-  <body>
-    <a-scene
-      vr-mode-ui="enabled: false"
-      renderer="logarithmicDepthBuffer: true;"
-      embedded
-      arjs="sourceType: camera; debugUIEnabled: true;"
-    >
-      <!-- Hiro marker -->
-      <a-marker preset="hiro">
-        <a-box position="0 0.5 0" color="#FF6666"></a-box>
-      </a-marker>
-
-      <a-entity camera></a-entity>
-    </a-scene>
-  </body>
+<head>
+  <meta charset="utf-8">
+  <title>AR.js Simple</title>
+  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.3.2/aframe/build/aframe-ar.js"></script>
+  <style> body { margin: 0; overflow: hidden; } </style>
+</head>
+<body>
+  <a-scene embedded arjs="sourceType: camera; debugUIEnabled: true;">
+    <a-marker preset="hiro">
+      <a-box position="0 0.5 0" color="#4CC3D9"></a-box>
+    </a-marker>
+    <a-entity camera></a-entity>
+  </a-scene>
+</body>
 </html>
