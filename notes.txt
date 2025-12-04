@@ -1,5 +1,5 @@
 main: AR example cylinders
 main2: AR Glb mit console log / funtioniert nicht
 main3: AR Glb / funtioniert nicht
-main4: ellipse und png texture
+main4: ellipses
 script: Glb (importiert von Cartaid Projekt) 
