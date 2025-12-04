@@ -9,10 +9,25 @@ let glbModel = null;
 
 // Load GLB once
 const loader = new GLTFLoader();
-loader.load("./earth.glb", (gltf) => {
-  glbModel = gltf.scene;
-  glbModel.scale.set(0.001, 0.001, 0.001); // Adjust size
-});
+loader.load(
+  "./earth.glb",
+  (gltf) => {
+    glbModel = gltf.scene;
+
+    // *** FIX: scale every child (your model is 195 meters tall!) ***
+    const SCALE = 0.00025;
+
+    glbModel.traverse((child) => {
+      if (child.isMesh) {
+        child.scale.multiplyScalar(SCALE);
+      }
+    });
+
+    glbModel.updateMatrixWorld(true);
+  },
+  undefined,
+  (err) => console.error("Failed to load GLB", err)
+);
 
 init();
 animate();
@@ -56,10 +71,8 @@ function init() {
 function onSelect() {
   if (!glbModel) return;
 
-  // Clone GLB like the cylinder logic
   const model = glbModel.clone(true);
 
-  // EXACT SAME placement logic as cylinder
   model.position.set(0, 0, -0.3).applyMatrix4(controller.matrixWorld);
   model.quaternion.setFromRotationMatrix(controller.matrixWorld);
 
