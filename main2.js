@@ -15,7 +15,7 @@ loader.load(
     glbModel = gltf.scene;
 
     // *** FIX: scale every child (your model is 195 meters tall!) ***
-    const SCALE = 0.00000025;
+    const SCALE = 0.00000000000000025;
 
     glbModel.traverse((child) => {
       if (child.isMesh) {
