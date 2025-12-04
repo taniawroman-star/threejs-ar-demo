@@ -4,7 +4,6 @@ import { GLTFLoader } from "https://unpkg.com/three/examples/jsm/loaders/GLTFLoa
 
 let container;
 let camera, scene, renderer;
-let controller;
 let glbModel = null;
 
 // Load GLB once
@@ -13,10 +12,10 @@ loader.load(
   "./earth.glb",
   (gltf) => {
     glbModel = gltf.scene;
-    glbModel.scale.set(0.1, 0.1, 0.1); // small model for AR
+    glbModel.scale.set(0.1, 0.1, 0.1);
   },
   undefined,
-  (err) => console.error("Failed to load GLB", err)
+  (err) => console.error("Failed to load GLB:", err)
 );
 
 init();
@@ -47,13 +46,11 @@ function init() {
 
   container.appendChild(renderer.domElement);
 
-  // No hit-test — remove that entirely
+  // AR Button
   document.body.appendChild(ARButton.createButton(renderer));
 
-  // Controller for tapping
-  controller = renderer.xr.getController(0);
-  controller.addEventListener("select", onSelect);
-  scene.add(controller);
+  // SCREEN TOUCH to place object
+  window.addEventListener("touchstart", () => onSelect());
 
   window.addEventListener("resize", onWindowResize, false);
 }
@@ -63,13 +60,12 @@ function onSelect() {
 
   const model = glbModel.clone(true);
 
-  // Place at 30 cm in front of camera
-  const distance = 0.3; // 30cm
+  // Place 40cm in front of the camera
+  const distance = 0.4;
   const direction = new THREE.Vector3(0, 0, -distance);
   direction.applyQuaternion(camera.quaternion);
-  model.position.copy(camera.position).add(direction);
 
-  // Face the same way as camera
+  model.position.copy(camera.position).add(direction);
   model.quaternion.copy(camera.quaternion);
 
   scene.add(model);
