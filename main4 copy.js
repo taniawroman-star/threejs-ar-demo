@@ -44,15 +44,21 @@ function init() {
   geometry.rotateX(Math.PI / 2);
 
   function onSelect() {
-    const material = new THREE.MeshPhongMaterial({
+    const material = new THREE.MeshBasicMaterial({
       color: Math.random() * 0xffffff,
     });
 
-    const mesh = new THREE.Mesh(geometry, material);
+    const mesh = new THREE.Mesh(
+      new THREE.SphereGeometry(0.05, 32, 16),
+      material
+    );
 
-    mesh.position.set(0, 0, -0.3).applyMatrix4(controller.matrixWorld);
-
-    mesh.quaternion.setFromRotationMatrix(controller.matrixWorld);
+    // Position in front of controller
+    mesh.position.setFromMatrixPosition(controller.matrixWorld);
+    const forward = new THREE.Vector3(0, 0, -0.2).applyQuaternion(
+      controller.quaternion
+    );
+    mesh.position.add(forward);
 
     scene.add(mesh);
   }
