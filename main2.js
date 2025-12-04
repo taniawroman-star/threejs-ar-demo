@@ -65,6 +65,21 @@ loader.load(
   (gltf) => {
     glbModel = gltf.scene;
 
+    // After glbModel = gltf.scene;
+    const desiredSizeMeters = 1; // pick ~1 meter for AR
+    const overallBox = new THREE.Box3().setFromObject(glbModel);
+    const overallSize = new THREE.Vector3();
+    overallBox.getSize(overallSize);
+    const maxDim = Math.max(overallSize.x, overallSize.y, overallSize.z);
+    const scale = desiredSizeMeters / maxDim;
+    glbModel.scale.setScalar(scale);
+    console.log(
+      "Applied global scale:",
+      scale,
+      "New size:",
+      overallSize.multiplyScalar(scale)
+    );
+
     const axes = new THREE.AxesHelper(0.1);
     axes.name = "WORLD_AXES_HELPER";
     scene.add(axes);
