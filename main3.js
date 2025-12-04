@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/loaders/GLTFLoader.js";
-import { ARButton } from "https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/webxr/ARButton.js";
+import { ARButton } from "https://unpkg.com/three/examples/jsm/webxr/ARButton.js";
+import { GLTFLoader } from "https://unpkg.com/three/examples/jsm/loaders/GLTFLoader.js";
 
 let camera, scene, renderer;
 let reticle, model;
@@ -35,30 +35,37 @@ function init() {
     ARButton.createButton(renderer, { requiredFeatures: ["hit-test"] })
   );
 
-  loader.load("your_model.glb", function (gltf) {
-    model = gltf.scene;
+  // inside your init() function or before using loader
+  const loader = new GLTFLoader();
 
-    // Compute bounding box
-    const box = new THREE.Box3().setFromObject(model);
-    const size = box.getSize(new THREE.Vector3());
-    const maxDim = Math.max(size.x, size.y, size.z);
+  loader.load(
+    "/earth.glb",
+    function (gltf) {
+      const model = gltf.scene;
 
-    // Desired max size in meters (for AR)
-    const desiredSize = 1; // 1 meter
-    const scale = desiredSize / maxDim;
+      // Compute bounding box for automatic scaling
+      const box = new THREE.Box3().setFromObject(model);
+      const size = box.getSize(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const desiredSize = 1; // 1 meter in AR
+      const scale = desiredSize / maxDim;
+      model.scale.setScalar(scale);
 
-    model.scale.setScalar(scale); // uniform scaling
+      // Center the model
+      const center = box.getCenter(new THREE.Vector3());
+      model.position.sub(center.multiplyScalar(scale));
 
-    // Center the model
-    const center = box.getCenter(new THREE.Vector3());
-    model.position.sub(center.multiplyScalar(scale));
+      // Optional rotation fix
+      model.rotation.x = -Math.PI / 2;
 
-    // Optional: Fix rotation if model is upside down
-    model.rotation.x = -Math.PI / 2;
-
-    model.visible = false;
-    scene.add(model);
-  });
+      model.visible = false; // initially hide until AR placement
+      scene.add(model);
+    },
+    undefined,
+    function (error) {
+      console.error("Error loading GLB:", error);
+    }
+  );
 
   // Reticle for placement
   const geometry = new THREE.RingGeometry(0.1, 0.11, 32).rotateX(-Math.PI / 2);
