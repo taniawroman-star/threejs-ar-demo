@@ -20,7 +20,7 @@ loader.load(
     });
 
     // NOW apply your global scale
-    const SCALE = 0.0002; // try this first -- should be small enough
+    const SCALE = 0.02; // try this first -- should be small enough
     glbModel.scale.set(SCALE, SCALE, SCALE);
 
     glbModel.updateMatrixWorld(true);
