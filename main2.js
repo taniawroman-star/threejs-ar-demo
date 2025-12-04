@@ -2,30 +2,23 @@ import * as THREE from "three";
 import { ARButton } from "https://unpkg.com/three/examples/jsm/webxr/ARButton.js";
 import { GLTFLoader } from "https://unpkg.com/three/examples/jsm/loaders/GLTFLoader.js";
 
-let container;
-let camera, scene, renderer;
-let controller;
-let glbModel = null;
+let camera, scene, renderer, controller;
+let glbModel;
+let hitTestSource = null;
+let hitTestSourceRequested = false;
+let reticle;
 
-// Load GLB once at startup
+// Load GLB (only once)
 const loader = new GLTFLoader();
-loader.load(
-  "./earth.glb",
-  (gltf) => {
-    glbModel = gltf.scene;
-    glbModel.scale.set(0.03); // Adjust GLB size for AR
-  },
-  undefined,
-  (err) => console.error("Failed to load GLB", err)
-);
+loader.load("./earth.glb", (gltf) => {
+  glbModel = gltf.scene;
+  glbModel.scale.set(0.1, 0.1, 0.1); // 10 cm object
+});
 
 init();
 animate();
 
 function init() {
-  container = document.createElement("div");
-  document.body.appendChild(container);
-
   scene = new THREE.Scene();
 
   camera = new THREE.PerspectiveCamera(
@@ -36,44 +29,39 @@ function init() {
   );
 
   const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
-  light.position.set(0.5, 1, 0.25);
   scene.add(light);
 
-  // Renderer
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-  renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.xr.enabled = true;
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
 
-  container.appendChild(renderer.domElement);
-
-  // AR Button
   document.body.appendChild(
     ARButton.createButton(renderer, { requiredFeatures: ["hit-test"] })
   );
 
-  // Controller
+  // Reticle for placement
+  reticle = new THREE.Mesh(
+    new THREE.RingGeometry(0.07, 0.09, 32).rotateX(-Math.PI / 2),
+    new THREE.MeshBasicMaterial({ color: 0x00ff00 })
+  );
+  reticle.visible = false;
+  scene.add(reticle);
+
+  // Tap to place object
   controller = renderer.xr.getController(0);
   controller.addEventListener("select", onSelect);
   scene.add(controller);
 
-  window.addEventListener("resize", onWindowResize, false);
+  window.addEventListener("resize", onWindowResize);
 }
 
 function onSelect() {
-  if (!glbModel) return; // GLB not loaded yet
-
-  // Clone GLB so you can place multiple
-  const model = glbModel.clone(true);
-
-  // Place at controller pointing position
-  model.position.set(0, 0, -600).applyMatrix4(controller.matrixWorld);
-
-  // Ensure orientation matches user view
-  model.quaternion.setFromRotationMatrix(controller.matrixWorld);
-
-  scene.add(model);
+  if (glbModel && reticle.visible) {
+    const obj = glbModel.clone();
+    obj.position.copy(reticle.position);
+    scene.add(obj);
+  }
 }
 
 function onWindowResize() {
@@ -86,6 +74,43 @@ function animate() {
   renderer.setAnimationLoop(render);
 }
 
-function render() {
+function render(timestamp, frame) {
+  if (frame) {
+    const referenceSpace = renderer.xr.getReferenceSpace();
+    const session = renderer.xr.getSession();
+
+    if (!hitTestSourceRequested) {
+      session.requestReferenceSpace("viewer").then((refSpace) => {
+        session.requestHitTestSource({ space: refSpace }).then((source) => {
+          hitTestSource = source;
+        });
+      });
+      hitTestSourceRequested = true;
+
+      session.addEventListener("end", () => {
+        hitTestSourceRequested = false;
+        hitTestSource = null;
+      });
+    }
+
+    if (hitTestSource) {
+      const hitTestResults = frame.getHitTestResults(hitTestSource);
+
+      if (hitTestResults.length > 0) {
+        const hit = hitTestResults[0];
+        const pose = hit.getPose(referenceSpace);
+
+        reticle.visible = true;
+        reticle.position.set(
+          pose.transform.position.x,
+          pose.transform.position.y,
+          pose.transform.position.z
+        );
+      } else {
+        reticle.visible = false;
+      }
+    }
+  }
+
   renderer.render(scene, camera);
 }
