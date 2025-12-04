@@ -4,19 +4,15 @@ import { GLTFLoader } from "https://unpkg.com/three/examples/jsm/loaders/GLTFLoa
 
 let container;
 let camera, scene, renderer;
+let controller;
 let glbModel = null;
 
 // Load GLB once
 const loader = new GLTFLoader();
-loader.load(
-  "./earth.glb",
-  (gltf) => {
-    glbModel = gltf.scene;
-    glbModel.scale.set(0.1, 0.1, 0.1);
-  },
-  undefined,
-  (err) => console.error("Failed to load GLB:", err)
-);
+loader.load("./earth.glb", (gltf) => {
+  glbModel = gltf.scene;
+  glbModel.scale.set(0.05, 0.05, 0.05); // Adjust size
+});
 
 init();
 animate();
@@ -46,11 +42,13 @@ function init() {
 
   container.appendChild(renderer.domElement);
 
-  // AR Button
+  // Important: NO hit-test
   document.body.appendChild(ARButton.createButton(renderer));
 
-  // SCREEN TOUCH to place object
-  window.addEventListener("touchstart", () => onSelect());
+  // Controller that fires select events
+  controller = renderer.xr.getController(0);
+  controller.addEventListener("select", onSelect);
+  scene.add(controller);
 
   window.addEventListener("resize", onWindowResize, false);
 }
@@ -58,15 +56,12 @@ function init() {
 function onSelect() {
   if (!glbModel) return;
 
+  // Clone GLB like the cylinder logic
   const model = glbModel.clone(true);
 
-  // Place 40cm in front of the camera
-  const distance = 0.4;
-  const direction = new THREE.Vector3(0, 0, -distance);
-  direction.applyQuaternion(camera.quaternion);
-
-  model.position.copy(camera.position).add(direction);
-  model.quaternion.copy(camera.quaternion);
+  // EXACT SAME placement logic as cylinder
+  model.position.set(0, 0, -0.3).applyMatrix4(controller.matrixWorld);
+  model.quaternion.setFromRotationMatrix(controller.matrixWorld);
 
   scene.add(model);
 }
