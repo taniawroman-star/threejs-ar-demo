@@ -14,14 +14,14 @@ loader.load(
   (gltf) => {
     glbModel = gltf.scene;
 
-    // *** FIX: scale every child (your model is 195 meters tall!) ***
-    const SCALE = 0.00000000000000025;
-
-    glbModel.traverse((child) => {
-      if (child.isMesh) {
-        child.scale.multiplyScalar(SCALE);
-      }
+    // REMOVE all internal scaling
+    glbModel.traverse((obj) => {
+      if (obj.scale) obj.scale.set(1, 1, 1);
     });
+
+    // NOW apply your global scale
+    const SCALE = 0.0002; // try this first -- should be small enough
+    glbModel.scale.set(SCALE, SCALE, SCALE);
 
     glbModel.updateMatrixWorld(true);
   },
