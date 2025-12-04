@@ -40,7 +40,7 @@ function init() {
   document.body.appendChild(ARButton.createButton(renderer));
 
   // UPDATED geometry (CylinderBufferGeometry removed)
-  const geometry = new THREE.SphereGeometry(0.1, 32, 16); // 5 cm radius
+  const geometry = new THREE.SphereGeometry(0.5, 32, 16); // 5 cm radius
   geometry.rotateX(Math.PI / 2);
 
   function onSelect() {
