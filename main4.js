@@ -50,9 +50,10 @@ function init() {
 
     const mesh = new THREE.Mesh(geometry, material);
 
-    mesh.position.set(0, 0, -0.3).applyMatrix4(controller.matrixWorld);
-
+    // Place the sphere 30 cm in front of the controller
+    mesh.position.setFromMatrixPosition(controller.matrixWorld);
     mesh.quaternion.setFromRotationMatrix(controller.matrixWorld);
+    mesh.translateZ(-0.3);
 
     scene.add(mesh);
   }
