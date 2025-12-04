@@ -45,7 +45,7 @@ function init() {
 
   function onSelect() {
     const material = new THREE.MeshPhongMaterial({
-      color: Math.random() * 0xffffff,
+      color: 0xffff00,
     });
 
     const mesh = new THREE.Mesh(geometry, material);
