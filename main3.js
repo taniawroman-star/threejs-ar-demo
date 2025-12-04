@@ -35,30 +35,29 @@ function init() {
     ARButton.createButton(renderer, { requiredFeatures: ["hit-test"] })
   );
 
-  // inside your init() function or before using loader
+  // GLTF Loader
   const loader = new GLTFLoader();
-
   loader.load(
     "/earth.glb",
     function (gltf) {
-      const model = gltf.scene;
+      model = gltf.scene;
 
-      // Compute bounding box for automatic scaling
+      // Compute bounding box and scale
       const box = new THREE.Box3().setFromObject(model);
       const size = box.getSize(new THREE.Vector3());
       const maxDim = Math.max(size.x, size.y, size.z);
-      const desiredSize = 1; // 1 meter in AR
+      const desiredSize = 1; // 1 meter
       const scale = desiredSize / maxDim;
       model.scale.setScalar(scale);
 
-      // Center the model
+      // Center model
       const center = box.getCenter(new THREE.Vector3());
       model.position.sub(center.multiplyScalar(scale));
 
-      // Optional rotation fix
+      // Fix orientation if needed
       model.rotation.x = -Math.PI / 2;
 
-      model.visible = false; // initially hide until AR placement
+      model.visible = false; // show after placement
       scene.add(model);
     },
     undefined,
@@ -67,7 +66,7 @@ function init() {
     }
   );
 
-  // Reticle for placement
+  // Reticle for AR placement
   const geometry = new THREE.RingGeometry(0.1, 0.11, 32).rotateX(-Math.PI / 2);
   const material = new THREE.MeshBasicMaterial({ color: 0x0fff0f });
   reticle = new THREE.Mesh(geometry, material);
@@ -75,7 +74,7 @@ function init() {
   reticle.visible = false;
   scene.add(reticle);
 
-  // Hit test for AR placement
+  // Controller for placing model
   const controller = renderer.xr.getController(0);
   controller.addEventListener("select", () => {
     if (model && reticle.visible) {
@@ -85,18 +84,15 @@ function init() {
   });
   scene.add(controller);
 
-  // Window resize
   window.addEventListener("resize", onWindowResize);
 }
 
-// Handle resize
 function onWindowResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
-// Animation loop
 function animate() {
   renderer.setAnimationLoop(render);
 }
@@ -106,24 +102,26 @@ function render(timestamp, frame) {
     const referenceSpace = renderer.xr.getReferenceSpace();
     const session = renderer.xr.getSession();
 
-    if (!reticle.visible) {
-      session.requestAnimationFrame((time, xrFrame) => {
-        const viewerPose = xrFrame.getViewerPose(referenceSpace);
-        if (viewerPose) {
-          const hitTestResults = frame.getHitTestResults(
-            session.requestHitTestSourceForTransientInput({
-              profile: "generic-touchscreen",
-            })
-          );
-          if (hitTestResults.length > 0) {
-            const hit = hitTestResults[0];
-            reticle.visible = true;
-            reticle.matrix.fromArray(
-              hit.getPose(referenceSpace).transform.matrix
-            );
+    // Hit test for reticle placement
+    if (session && !reticle.visible) {
+      const viewerPose = frame.getViewerPose(referenceSpace);
+      if (viewerPose) {
+        session.requestAnimationFrame(() => {
+          const hitTestSource = session.requestHitTestSource({
+            space: renderer.xr.getReferenceSpace(),
+          });
+          if (hitTestSource) {
+            const hitTestResults = frame.getHitTestResults(hitTestSource);
+            if (hitTestResults.length > 0) {
+              const hit = hitTestResults[0];
+              reticle.visible = true;
+              reticle.matrix.fromArray(
+                hit.getPose(referenceSpace).transform.matrix
+              );
+            }
           }
-        }
-      });
+        });
+      }
     }
   }
 
