@@ -13,7 +13,7 @@ loader.load(
   "./earth.glb",
   (gltf) => {
     glbModel = gltf.scene;
-    glbModel.scale.set(0.2, 0.2, 0.2); // Adjust GLB size for AR
+    glbModel.scale.set(0.03); // Adjust GLB size for AR
   },
   undefined,
   (err) => console.error("Failed to load GLB", err)
