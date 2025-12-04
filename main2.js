@@ -68,7 +68,7 @@ function onSelect() {
   const model = glbModel.clone(true);
 
   // Place at controller pointing position
-  model.position.set(0, 0, -0.3).applyMatrix4(controller.matrixWorld);
+  model.position.set(0, 0, -10).applyMatrix4(controller.matrixWorld);
 
   // Ensure orientation matches user view
   model.quaternion.setFromRotationMatrix(controller.matrixWorld);
