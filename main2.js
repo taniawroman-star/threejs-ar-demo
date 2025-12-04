@@ -11,7 +11,7 @@ let glbModel = null;
 const loader = new GLTFLoader();
 loader.load("./earth.glb", (gltf) => {
   glbModel = gltf.scene;
-  glbModel.scale.set(0.01, 0.01, 0.01); // Adjust size
+  glbModel.scale.set(0.001, 0.001, 0.001); // Adjust size
 });
 
 init();
