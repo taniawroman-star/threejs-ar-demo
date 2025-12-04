@@ -8,26 +8,37 @@ let controller;
 let glbModel = null;
 
 // Load GLB once
-const loader = new GLTFLoader();
-loader.load(
-  "./earth.glb",
-  (gltf) => {
-    glbModel = gltf.scene;
+loader.load("./earth.glb", (gltf) => {
+  glbModel = gltf.scene;
 
-    // REMOVE all internal scaling
-    glbModel.traverse((obj) => {
-      if (obj.scale) obj.scale.set(1, 1, 1);
-    });
+  // Completely reset transform hierarchy
+  glbModel.traverse((obj) => {
+    if (obj.isMesh) {
+      // Reset scale
+      obj.scale.set(1, 1, 1);
 
-    // NOW apply your global scale
-    const SCALE = 1; // try this first -- should be small enough
-    glbModel.scale.set(SCALE, SCALE, SCALE);
+      // Reset rotation
+      obj.rotation.set(0, 0, 0);
 
-    glbModel.updateMatrixWorld(true);
-  },
-  undefined,
-  (err) => console.error("Failed to load GLB", err)
-);
+      // Reset position
+      obj.position.set(0, 0, 0);
+
+      // Force geometry recalc
+      obj.updateMatrix();
+    }
+  });
+
+  // Now scale the whole model
+  const SCALE = 0.01;
+  glbModel.scale.set(SCALE, SCALE, SCALE);
+
+  // Center the object manually
+  const box = new THREE.Box3().setFromObject(glbModel);
+  const center = box.getCenter(new THREE.Vector3());
+  glbModel.position.sub(center);
+
+  glbModel.updateMatrixWorld(true);
+});
 
 init();
 animate();
