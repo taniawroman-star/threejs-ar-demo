@@ -2,35 +2,82 @@ import * as THREE from "three";
 import { ARButton } from "https://unpkg.com/three/examples/jsm/webxr/ARButton.js";
 import { GLTFLoader } from "https://unpkg.com/three/examples/jsm/loaders/GLTFLoader.js";
 
+// ----- On-screen debug console -----
+const logEl = document.createElement("pre");
+logEl.style.position = "fixed";
+logEl.style.bottom = "0";
+logEl.style.left = "0";
+logEl.style.width = "100%";
+logEl.style.maxHeight = "30%";
+logEl.style.overflowY = "auto";
+logEl.style.backgroundColor = "rgba(0,0,0,0.7)";
+logEl.style.color = "white";
+logEl.style.fontSize = "12px";
+logEl.style.zIndex = "9999";
+logEl.style.padding = "4px";
+logEl.style.fontFamily = "monospace";
+document.body.appendChild(logEl);
+
+console.oldLog = console.log;
+console.oldWarn = console.warn;
+console.oldError = console.error;
+
+console.log = function (...args) {
+  console.oldLog.apply(console, args);
+  logEl.textContent +=
+    args
+      .map((a) => (typeof a === "object" ? JSON.stringify(a, null, 2) : a))
+      .join(" ") + "\n";
+  logEl.scrollTop = logEl.scrollHeight;
+};
+
+console.warn = function (...args) {
+  console.oldWarn.apply(console, args);
+  logEl.textContent +=
+    "⚠️ " +
+    args
+      .map((a) => (typeof a === "object" ? JSON.stringify(a, null, 2) : a))
+      .join(" ") +
+    "\n";
+  logEl.scrollTop = logEl.scrollHeight;
+};
+
+console.error = function (...args) {
+  console.oldError.apply(console, args);
+  logEl.textContent +=
+    "❌ " +
+    args
+      .map((a) => (typeof a === "object" ? JSON.stringify(a, null, 2) : a))
+      .join(" ") +
+    "\n";
+  logEl.scrollTop = logEl.scrollHeight;
+};
+
+// ----- Existing Three.js / WebXR code -----
 let container;
 let camera, scene, renderer;
 let controller;
 let glbModel = null;
 
-// ----- Debugging loader + placement (drop in to replace your current loader & onSelect) -----
 const loader = new GLTFLoader();
 loader.load(
   "./earth.glb",
   (gltf) => {
     glbModel = gltf.scene;
 
-    // 1) Add a visual axes helper at world origin so you can see the real origin in AR
-    const axes = new THREE.AxesHelper(0.1); // 10cm axes
+    const axes = new THREE.AxesHelper(0.1);
     axes.name = "WORLD_AXES_HELPER";
     scene.add(axes);
 
-    // 2) Add a visible tiny cube that will show where we place objects
-    const dbgGeom = new THREE.BoxGeometry(0.02, 0.02, 0.02); // 2 cm cube
+    const dbgGeom = new THREE.BoxGeometry(0.02, 0.02, 0.02);
     const dbgMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
     const placeMarker = new THREE.Mesh(dbgGeom, dbgMat);
     placeMarker.name = "PLACE_MARKER";
     placeMarker.visible = false;
     scene.add(placeMarker);
 
-    // 3) Print hierarchical info for every node
     console.group("GLTF Hierarchy and Transforms");
     glbModel.traverse((node) => {
-      // Basic node info
       const indent = "  ".repeat(node.name ? node.name.split("/").length : 0);
       console.log(`${indent}Node:`, node.name || "(no-name)", {
         type: node.type,
@@ -43,13 +90,11 @@ loader.load(
         scale: node.scale ? node.scale.clone() : null,
       });
 
-      // If it's a mesh, compute its local bounding box, size and center (in local space)
       if (node.isMesh) {
-        // Ensure geometry bounding box exists
         if (!node.geometry.boundingBox) {
           node.geometry.computeBoundingBox();
         }
-        const bbox = node.geometry.boundingBox.clone(); // local geometry bbox
+        const bbox = node.geometry.boundingBox.clone();
         const size = new THREE.Vector3();
         bbox.getSize(size);
         const center = new THREE.Vector3();
@@ -59,7 +104,6 @@ loader.load(
           `   → mesh geometry bbox (local): min=${bbox.min.toArray()} max=${bbox.max.toArray()} size=${size.toArray()} center=${center.toArray()}`
         );
 
-        // Also compute world-space bbox for this mesh (useful if transforms are applied in nodes)
         const worldBox = new THREE.Box3().setFromObject(node);
         const worldSize = new THREE.Vector3();
         worldBox.getSize(worldSize);
@@ -72,7 +116,6 @@ loader.load(
     });
     console.groupEnd();
 
-    // 4) Compute overall bounding box for the whole glbModel
     const overallBox = new THREE.Box3().setFromObject(glbModel);
     const overallSize = new THREE.Vector3();
     overallBox.getSize(overallSize);
@@ -88,12 +131,10 @@ loader.load(
       }
     );
 
-    // 5) Add a BoxHelper so you can visually inspect where the model is
     const boxHelper = new THREE.BoxHelper(glbModel, 0x00ff00);
     boxHelper.name = "GLB_BOX_HELPER";
     scene.add(boxHelper);
 
-    // 6) If the model is far from origin or huge, print suggestions
     const centerDistance = overallCenter.length();
     console.log(
       `GLB center distance from GLB root: ${centerDistance.toFixed(
@@ -111,13 +152,11 @@ loader.load(
       );
     }
 
-    // 7) EXPOSE utilities on the model to help debugging from console manually:
     glbModel.__debug = {
       overallBox,
       overallSize,
       overallCenter,
       recenter: function () {
-        // shift model so its bounding-box center is at origin
         const box = new THREE.Box3().setFromObject(glbModel);
         const center = box.getCenter(new THREE.Vector3());
         glbModel.position.sub(center);
@@ -141,23 +180,17 @@ loader.load(
       },
     };
 
-    // 8) Add to the scene but keep it invisible or visible depending on what you want to test:
-    // If you want to preview immediately, set visible = true. If not, keep visible = false and show when placed.
     glbModel.visible = true;
     scene.add(glbModel);
 
-    // make helpers update each frame (box helper)
     function _updateHelpers() {
       boxHelper.update();
       requestAnimationFrame(_updateHelpers);
     }
     _updateHelpers();
 
-    // 9) Update debug place marker when placing in onSelect (we'll use this later)
-    // Save pointer to placeMarker on the model for use in onSelect
     glbModel.userData._placeMarker = placeMarker;
 
-    // Final log: tell user the model is loaded and how to run helper commands
     console.log(
       "GLB loaded and added to scene. Use `glbModel.__debug.recenter()` or `glbModel.__debug.resetAllTransforms()` from the console."
     );
@@ -197,10 +230,8 @@ function init() {
 
   container.appendChild(renderer.domElement);
 
-  // Important: NO hit-test
   document.body.appendChild(ARButton.createButton(renderer));
 
-  // Controller that fires select events
   controller = renderer.xr.getController(0);
   controller.addEventListener("select", onSelect);
   scene.add(controller);
@@ -208,22 +239,18 @@ function init() {
   window.addEventListener("resize", onWindowResize, false);
 }
 
-// ----- Replace your onSelect with this debug-aware version -----
 function onSelect() {
   if (!glbModel) {
     console.warn("onSelect called but glbModel not ready");
     return;
   }
 
-  // clone and keep the same scale/transform
   const model = glbModel.clone(true);
-  model.scale.copy(glbModel.scale); // ensure clone keeps visible scaling
+  model.scale.copy(glbModel.scale);
 
-  // Compute placement using controller matrix (same as your working cylinder code)
   model.position.set(0, 0, -0.3).applyMatrix4(controller.matrixWorld);
   model.quaternion.setFromRotationMatrix(controller.matrixWorld);
 
-  // Compute world bbox and center for the clone (after applying world transform)
   model.updateMatrixWorld(true);
   const worldBox = new THREE.Box3().setFromObject(model);
   const worldCenter = new THREE.Vector3();
@@ -231,7 +258,6 @@ function onSelect() {
   const worldSize = new THREE.Vector3();
   worldBox.getSize(worldSize);
 
-  // Add a visible marker at the intended placement location
   const marker = scene.getObjectByName("PLACE_MARKER");
   if (marker) {
     marker.position.copy(model.position);
@@ -240,7 +266,6 @@ function onSelect() {
 
   scene.add(model);
 
-  // Log placement info
   console.group("Placed GLB Instance");
   console.log("Camera position:", camera.position.clone());
   console.log(
@@ -257,7 +282,6 @@ function onSelect() {
   console.log("Model world center (m):", worldCenter.toArray());
   console.groupEnd();
 
-  // If the placed object is far from the intended placement, give warning
   const d = worldCenter.distanceTo(model.position);
   if (d > 0.1) {
     console.warn(
