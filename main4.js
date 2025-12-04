@@ -40,7 +40,7 @@ function init() {
   document.body.appendChild(ARButton.createButton(renderer));
 
   // UPDATED geometry (CylinderBufferGeometry removed)
-  const geometry = new THREE.SphereGeometry(15, 32, 16);
+  const geometry = new THREE.SphereGeometry(0.05, 32, 16); // 5 cm radius
   geometry.rotateX(Math.PI / 2);
 
   function onSelect() {
@@ -48,11 +48,17 @@ function init() {
       color: Math.random() * 0xffffff,
     });
 
-    const mesh = new THREE.Mesh(geometry, material);
+    const mesh = new THREE.Mesh(
+      new THREE.SphereGeometry(0.05, 32, 16),
+      material
+    );
 
-    mesh.position.set(0, 0, -0.3).applyMatrix4(controller.matrixWorld);
-
-    mesh.quaternion.setFromRotationMatrix(controller.matrixWorld);
+    // Position in front of controller
+    mesh.position.setFromMatrixPosition(controller.matrixWorld);
+    const forward = new THREE.Vector3(0, 0, -0.2).applyQuaternion(
+      controller.quaternion
+    );
+    mesh.position.add(forward);
 
     scene.add(mesh);
   }
