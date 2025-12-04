@@ -21,15 +21,18 @@ function init() {
     20
   );
 
-  const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
-  light.position.set(0.5, 1, 0.25);
-  scene.add(light);
+  const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+  dirLight.position.set(0, 1, 0); // overhead
+  dirLight.castShadow = true;
+  scene.add(dirLight);
 
   // Renderer
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.xr.enabled = true;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   // NEW API
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -40,7 +43,7 @@ function init() {
   document.body.appendChild(ARButton.createButton(renderer));
 
   // UPDATED geometry (CylinderBufferGeometry removed)
-  const geometry = new THREE.SphereGeometry(1, 32, 16); // 5 cm radius
+  const geometry = new THREE.SphereGeometry(0.1, 32, 16); // 10 cm radius
   geometry.rotateX(Math.PI / 2);
 
   function onSelect() {
@@ -49,8 +52,9 @@ function init() {
     });
 
     const mesh = new THREE.Mesh(geometry, material);
+    mesh.castShadow = true; // important
+    mesh.receiveShadow = true;
 
-    // Place the sphere 30 cm in front of the controller
     mesh.position.setFromMatrixPosition(controller.matrixWorld);
     mesh.quaternion.setFromRotationMatrix(controller.matrixWorld);
     mesh.translateZ(-0.3);
