@@ -1,9 +1,23 @@
 import * as THREE from "three";
 import { ARButton } from "https://unpkg.com/three/examples/jsm/webxr/ARButton.js";
+import { GLTFLoader } from "https://unpkg.com/three/examples/jsm/loaders/GLTFLoader.js";
 
 let container;
 let camera, scene, renderer;
 let controller;
+let glbModel = null;
+
+// Load GLB once at startup
+const loader = new GLTFLoader();
+loader.load(
+  "./earth.glb",
+  (gltf) => {
+    glbModel = gltf.scene;
+    glbModel.scale.set(0.2, 0.2, 0.2); // Adjust GLB size for AR
+  },
+  undefined,
+  (err) => console.error("Failed to load GLB", err)
+);
 
 init();
 animate();
@@ -30,38 +44,36 @@ function init() {
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.xr.enabled = true;
-
-  // NEW API
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 
   container.appendChild(renderer.domElement);
 
   // AR Button
-  document.body.appendChild(ARButton.createButton(renderer));
+  document.body.appendChild(
+    ARButton.createButton(renderer, { requiredFeatures: ["hit-test"] })
+  );
 
-  // UPDATED geometry (CylinderBufferGeometry removed)
-  const geometry = new THREE.CylinderGeometry(0, 0.05, 0.2, 32);
-  geometry.rotateX(Math.PI / 2);
-
-  function onSelect() {
-    const material = new THREE.MeshPhongMaterial({
-      color: Math.random() * 0xffffff,
-    });
-
-    const mesh = new THREE.Mesh(geometry, material);
-
-    mesh.position.set(0, 0, -0.3).applyMatrix4(controller.matrixWorld);
-
-    mesh.quaternion.setFromRotationMatrix(controller.matrixWorld);
-
-    scene.add(mesh);
-  }
-
+  // Controller
   controller = renderer.xr.getController(0);
   controller.addEventListener("select", onSelect);
   scene.add(controller);
 
   window.addEventListener("resize", onWindowResize, false);
+}
+
+function onSelect() {
+  if (!glbModel) return; // GLB not loaded yet
+
+  // Clone GLB so you can place multiple
+  const model = glbModel.clone(true);
+
+  // Place at controller pointing position
+  model.position.set(0, 0, -0.3).applyMatrix4(controller.matrixWorld);
+
+  // Ensure orientation matches user view
+  model.quaternion.setFromRotationMatrix(controller.matrixWorld);
+
+  scene.add(model);
 }
 
 function onWindowResize() {

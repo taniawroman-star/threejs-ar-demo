@@ -34,7 +34,7 @@ controls.screenSpacePanning = false; // Disable panning
 // Load GLB Model
 const loader = new GLTFLoader();
 loader.load(
-  "./caryatid2.glb", // Your specific GLB file path
+  "./earth.glb", // Your specific GLB file path
   (gltf) => {
     const model = gltf.scene; // The 3D model scene from the file
     scene.add(model); // Add the model to the scene
