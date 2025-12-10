@@ -39,11 +39,15 @@ function init() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.xr.enabled = true;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
-
   container.appendChild(renderer.domElement);
 
-  // AR Button
-  document.body.appendChild(ARButton.createButton(renderer));
+  // ✅ AR Button WITH DOM OVERLAY (IMPORTANT)
+  document.body.appendChild(
+    ARButton.createButton(renderer, {
+      optionalFeatures: ["dom-overlay"],
+      domOverlay: { root: document.body },
+    })
+  );
 
   // ✅ Image URLs
   const imagePaths = [
@@ -61,7 +65,7 @@ function init() {
     return tex;
   });
 
-  // ✅ Image geometry (10cm x 10cm)
+  // ✅ Image geometry (20cm x 20cm)
   geometry = new THREE.PlaneGeometry(0.2, 0.2);
 
   // Controller
@@ -69,7 +73,7 @@ function init() {
   controller.addEventListener("select", onSelect);
   scene.add(controller);
 
-  // ✅ Image change button
+  // ✅ AR Image Change Button
   const btn = document.createElement("button");
   btn.textContent = "Change Image";
   btn.style.position = "fixed";
@@ -79,6 +83,10 @@ function init() {
   btn.style.padding = "12px 18px";
   btn.style.fontSize = "16px";
   btn.style.zIndex = "999";
+  btn.style.background = "rgba(0,0,0,0.6)";
+  btn.style.color = "white";
+  btn.style.border = "none";
+  btn.style.borderRadius = "8px";
   document.body.appendChild(btn);
 
   btn.addEventListener("click", () => {
