@@ -45,7 +45,7 @@ function init() {
   document.body.appendChild(ARButton.createButton(renderer));
 
   const imageURL = new URL(
-    "../images/icon1440-1966-06_X_CERN_14195_0041.jpg",
+    "./images/icon1440-1966-06_X_CERN_14195_0041.jpg",
     import.meta.url
   ).href;
 
