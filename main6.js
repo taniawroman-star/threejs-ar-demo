@@ -7,7 +7,6 @@ let controller;
 
 let imageTextures = [];
 let currentImageIndex = 0;
-let geometry;
 
 init();
 animate();
@@ -41,7 +40,7 @@ function init() {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   container.appendChild(renderer.domElement);
 
-  // ✅ AR Button WITH DOM OVERLAY (IMPORTANT)
+  // ✅ AR Button WITH DOM OVERLAY
   document.body.appendChild(
     ARButton.createButton(renderer, {
       optionalFeatures: ["dom-overlay"],
@@ -58,26 +57,30 @@ function init() {
 
   const loader = new THREE.TextureLoader();
 
+  // Load textures and store aspect ratio
   imageTextures = imagePaths.map((path) => {
     const url = new URL(path, import.meta.url).href;
     const tex = loader.load(url);
     tex.colorSpace = THREE.SRGBColorSpace;
-    return tex;
+    const item = { texture: tex, aspect: 1 };
+    // Update aspect ratio when image is loaded
+    tex.image?.addEventListener?.("load", () => {
+      item.aspect = tex.image.width / tex.image.height;
+    });
+    return item;
   });
-
-  // ✅ Image geometry (20cm x 20cm)
-  geometry = new THREE.PlaneGeometry(0.2, 0.2);
 
   // Controller
   controller = renderer.xr.getController(0);
   controller.addEventListener("select", onSelect);
   scene.add(controller);
 
-  // ✅ AR Image Change Button
+  // ✅ AR Image Change Button (top, reliable)
   const btn = document.createElement("button");
   btn.textContent = "Change Image";
   btn.style.position = "fixed";
-  btn.style.bottom = "20px";
+  btn.style.top = "20px";
+  btn.style.bottom = "auto";
   btn.style.left = "50%";
   btn.style.transform = "translateX(-50%)";
   btn.style.padding = "12px 18px";
@@ -89,7 +92,9 @@ function init() {
   btn.style.borderRadius = "8px";
   document.body.appendChild(btn);
 
-  btn.addEventListener("click", () => {
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    e.preventDefault();
     currentImageIndex = (currentImageIndex + 1) % imageTextures.length;
     console.log("🖼️ Switched to image:", currentImageIndex);
   });
@@ -97,9 +102,16 @@ function init() {
   window.addEventListener("resize", onWindowResize);
 }
 
+// ✅ Place image keeping aspect ratio
 function onSelect() {
+  const img = imageTextures[currentImageIndex];
+
+  const height = 0.2; // 20 cm
+  const width = height * img.aspect;
+
+  const geometry = new THREE.PlaneGeometry(width, height);
   const material = new THREE.MeshBasicMaterial({
-    map: imageTextures[currentImageIndex],
+    map: img.texture,
     transparent: true,
     side: THREE.DoubleSide,
   });
