@@ -45,7 +45,7 @@ function init() {
   document.body.appendChild(ARButton.createButton(renderer));
 
   imageTexture = new THREE.TextureLoader().load(
-    "./images/icon1440-1966-06_X_CERN_14195_0041.jpg",
+    "./threejs-ar-demo/images/icon1440-1966-06_X_CERN_14195_0041.jpg",
     () => console.log("✅ texture loaded"),
     undefined,
     (e) => console.error("❌ texture error", e)
