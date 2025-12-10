@@ -4,4 +4,5 @@ main3: AR Glb / funtioniert nicht
 main4: ellipses
 script: Glb (importiert von Cartaid Projekt) 
 main5: lade ein Bild jpg
-main6: buttons wechsle Bild in AR
+main6: buttons wechsle Bild in AR - unzuverlässig
+main7: random Bilder wenn touch
