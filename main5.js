@@ -47,7 +47,7 @@ function init() {
   // ✅ Load JPG texture
   const textureLoader = new THREE.TextureLoader();
   imageTexture = textureLoader.load(
-    "images/icon1440-1966-06_X_CERN_14195_0041.jpg"
+    "threejs-ar-demo/images/icon1440-1966-06_X_CERN_14195_0041.jpg"
   );
   imageTexture.colorSpace = THREE.SRGBColorSpace;
 
