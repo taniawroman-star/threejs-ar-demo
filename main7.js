@@ -64,6 +64,12 @@ function loadImages() {
     "./images/icon640-1996-10-001_X_CERN_04338_0013.jpg",
     "./images/1990-08-109_A_0001-icon-1440.jpg",
     "./images/1991-01-027_X_0007-icon-1440.jpg",
+    "./images/1991-06-016_X_0001-icon-640.jpg",
+    "./images/1992-09-005X_01_icon640.jpg",
+    "./images/1999-01-018X_04_icon640.jpg",
+    "./images/4465.jpg",
+    "./images/66-6-242.jpg",
+    "./images/69-10-372.jpg",
   ];
 
   const loader = new THREE.TextureLoader();
