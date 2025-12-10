@@ -45,11 +45,16 @@ function init() {
   document.body.appendChild(ARButton.createButton(renderer));
 
   const imageURL = new URL(
-    "images/icon1440-1966-06_X_CERN_14195_0041.jpg",
-    window.location.href
+    "../images/icon1440-1966-06_X_CERN_14195_0041.jpg",
+    import.meta.url
   ).href;
 
-  imageTexture = new THREE.TextureLoader().load(imageURL);
+  imageTexture = new THREE.TextureLoader().load(
+    imageURL,
+    () => console.log("✅ texture loaded"),
+    undefined,
+    (e) => console.error("❌ texture error", e)
+  );
 
   imageTexture.colorSpace = THREE.SRGBColorSpace;
 
