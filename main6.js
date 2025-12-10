@@ -6,8 +6,9 @@ let container;
 let camera, scene, renderer;
 let controller;
 
-let imageTextures = []; // Stores loaded textures and aspect ratios
+let imageTextures = []; // Stores loaded textures and their aspect ratios
 let currentImageIndex = 0; // Currently selected image index
+let totalImages = 3; // Total number of images to load
 
 // ===== Initialize scene =====
 init();
@@ -23,10 +24,10 @@ function init() {
 
   // ----- Camera -----
   camera = new THREE.PerspectiveCamera(
-    70, // FOV
+    70,
     window.innerWidth / window.innerHeight,
-    0.01, // Near clipping
-    20 // Far clipping
+    0.01,
+    20
   );
 
   // ----- Light -----
@@ -38,7 +39,7 @@ function init() {
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.xr.enabled = true; // Enable AR
+  renderer.xr.enabled = true;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   container.appendChild(renderer.domElement);
 
@@ -63,15 +64,23 @@ function init() {
   ];
 
   const loader = new THREE.TextureLoader();
+  let loadedCount = 0;
+
   imagePaths.forEach((path, i) => {
-    const url = new URL(path, import.meta.url).href;
     loader.load(
-      url,
+      new URL(path, import.meta.url).href,
       (tex) => {
         tex.colorSpace = THREE.SRGBColorSpace;
         const aspect = tex.image.width / tex.image.height;
         imageTextures[i] = { texture: tex, aspect };
+        loadedCount++;
         console.log(`✅ Loaded image ${i}, aspect: ${aspect}`);
+
+        // Enable button only after all images are loaded
+        if (loadedCount === totalImages) {
+          btn.disabled = false;
+          console.log("✅ All images loaded. Button enabled.");
+        }
       },
       undefined,
       (err) => console.error("Texture load error:", err)
@@ -79,20 +88,20 @@ function init() {
   });
 
   // ===== Overlay + Button =====
-  // Overlay div ensures button is always clickable, even with AR canvas
   const overlay = document.createElement("div");
   overlay.style.position = "fixed";
   overlay.style.top = "0";
   overlay.style.left = "0";
   overlay.style.width = "100%";
   overlay.style.height = "100%";
-  overlay.style.pointerEvents = "none"; // Allow canvas interactions through overlay
-  overlay.style.zIndex = "9999"; // Always on top
+  overlay.style.pointerEvents = "none"; // Let AR canvas interactions pass through
+  overlay.style.zIndex = "9999"; // On top
   document.body.appendChild(overlay);
 
   // Button inside overlay
   const btn = document.createElement("button");
   btn.textContent = "Change Image";
+  btn.disabled = true; // Disable until all textures are loaded
   btn.style.position = "absolute";
   btn.style.top = "20px";
   btn.style.left = "50%";
@@ -103,15 +112,32 @@ function init() {
   btn.style.color = "white";
   btn.style.border = "none";
   btn.style.borderRadius = "8px";
-  btn.style.pointerEvents = "auto"; // Enable clicks
+  btn.style.pointerEvents = "auto"; // Make clickable
   overlay.appendChild(btn);
 
-  // Button click: switch to next image (does NOT place it)
+  // Button click: switch to next loaded image only (does NOT place it)
   btn.addEventListener("click", (e) => {
     e.stopPropagation();
     e.preventDefault();
-    currentImageIndex = (currentImageIndex + 1) % imageTextures.length;
-    console.log("🖼️ Switched to image:", currentImageIndex);
+
+    let nextIndex = currentImageIndex;
+    let tries = 0;
+
+    // Loop to find next loaded texture
+    do {
+      nextIndex = (nextIndex + 1) % totalImages;
+      tries++;
+    } while (
+      (!imageTextures[nextIndex] || !imageTextures[nextIndex].texture) &&
+      tries <= totalImages
+    );
+
+    if (imageTextures[nextIndex] && imageTextures[nextIndex].texture) {
+      currentImageIndex = nextIndex;
+      console.log("🖼️ Switched to image:", currentImageIndex);
+    } else {
+      console.warn("No loaded images available yet!");
+    }
   });
 
   // ----- Handle window resize -----
