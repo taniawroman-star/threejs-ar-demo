@@ -44,11 +44,13 @@ function init() {
   // AR Button
   document.body.appendChild(ARButton.createButton(renderer));
 
-  // ✅ Load JPG texture
-  const textureLoader = new THREE.TextureLoader();
-  imageTexture = textureLoader.load(
-    "threejs-ar-demo/images/icon1440-1966-06_X_CERN_14195_0041.jpg"
+  imageTexture = new THREE.TextureLoader().load(
+    "./images/icon1440-1966-06_X_CERN_14195_0041.jpg",
+    () => console.log("✅ texture loaded"),
+    undefined,
+    (e) => console.error("❌ texture error", e)
   );
+
   imageTexture.colorSpace = THREE.SRGBColorSpace;
 
   // ✅ Image geometry (10cm x 10cm)
