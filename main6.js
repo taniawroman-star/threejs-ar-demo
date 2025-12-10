@@ -40,7 +40,7 @@ function init() {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   container.appendChild(renderer.domElement);
 
-  // ✅ AR Button WITH DOM OVERLAY
+  // AR Button
   document.body.appendChild(
     ARButton.createButton(renderer, {
       optionalFeatures: ["dom-overlay"],
@@ -48,7 +48,12 @@ function init() {
     })
   );
 
-  // ✅ Image URLs
+  // Controller
+  controller = renderer.xr.getController(0);
+  controller.addEventListener("select", onSelect);
+  scene.add(controller);
+
+  // Load textures
   const imagePaths = [
     "./images/icon1440-1966-06_X_CERN_14195_0041.jpg",
     "./images/1996-10-001_X_CERN_04338_0004_icon-1440.jpg",
@@ -56,31 +61,29 @@ function init() {
   ];
 
   const loader = new THREE.TextureLoader();
+  let texturesLoaded = 0;
 
-  // Load textures and store aspect ratio
-  imageTextures = imagePaths.map((path) => {
+  imagePaths.forEach((path, i) => {
     const url = new URL(path, import.meta.url).href;
-    const tex = loader.load(url);
-    tex.colorSpace = THREE.SRGBColorSpace;
-    const item = { texture: tex, aspect: 1 };
-    // Update aspect ratio when image is loaded
-    tex.image?.addEventListener?.("load", () => {
-      item.aspect = tex.image.width / tex.image.height;
-    });
-    return item;
+    loader.load(
+      url,
+      (tex) => {
+        tex.colorSpace = THREE.SRGBColorSpace;
+        const aspect = tex.image.width / tex.image.height;
+        imageTextures[i] = { texture: tex, aspect };
+        texturesLoaded++;
+        console.log(`✅ Loaded image ${i}, aspect: ${aspect}`);
+      },
+      undefined,
+      (err) => console.error("Texture load error:", err)
+    );
   });
 
-  // Controller
-  controller = renderer.xr.getController(0);
-  controller.addEventListener("select", onSelect);
-  scene.add(controller);
-
-  // ✅ AR Image Change Button (top, reliable)
+  // Button to change next image
   const btn = document.createElement("button");
   btn.textContent = "Change Image";
   btn.style.position = "fixed";
   btn.style.top = "20px";
-  btn.style.bottom = "auto";
   btn.style.left = "50%";
   btn.style.transform = "translateX(-50%)";
   btn.style.padding = "12px 18px";
@@ -102,9 +105,13 @@ function init() {
   window.addEventListener("resize", onWindowResize);
 }
 
-// ✅ Place image keeping aspect ratio
+// Place image on controller select
 function onSelect() {
   const img = imageTextures[currentImageIndex];
+  if (!img) {
+    console.warn("Texture not loaded yet!");
+    return;
+  }
 
   const height = 0.2; // 20 cm
   const width = height * img.aspect;
@@ -118,12 +125,9 @@ function onSelect() {
 
   const mesh = new THREE.Mesh(geometry, material);
 
-  // Place image 30cm in front of controller
   mesh.position.setFromMatrixPosition(controller.matrixWorld);
   mesh.quaternion.setFromRotationMatrix(controller.matrixWorld);
-  mesh.translateZ(-0.3);
-
-  // Face the camera
+  mesh.translateZ(-0.3); // Place 30 cm in front
   mesh.lookAt(camera.position);
 
   scene.add(mesh);
